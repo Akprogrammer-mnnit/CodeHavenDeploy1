@@ -17,12 +17,9 @@ import Chat from './ChatComponenet.jsx';
 import { useSelector } from 'react-redux';
 const api = axios.create({
     baseURL: import.meta.env.VITE_BACKEND_URL,
-    headers:
-    {
-        'Content-Type': 'application/json',
-    }
+    headers: { 'Content-Type': 'application/json' },
+    withCredentials: true,
 });
-
 const languageExtensions = {
     javascript: javascript(),
     python: python(),

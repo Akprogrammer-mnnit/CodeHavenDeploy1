@@ -7,7 +7,9 @@ import { X } from 'lucide-react';
 const api = axios.create({
     baseURL: import.meta.env.VITE_BACKEND_URL,
     headers: { 'Content-Type': 'application/json' },
+    withCredentials: true,
 });
+
 
 const Home = () => {
     const [rooms, setRooms] = React.useState([]);
