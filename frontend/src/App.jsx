@@ -12,23 +12,31 @@ function App() {
   const navigate = useNavigate()
   const status = useSelector((state) => state.auth.status);
   useEffect(() => {
-    axios.get(`${import.meta.env.VITE_BACKEND_URL}/users/getCurrentUser`, { withCredentials: true })
-      .then((userData) => {
+    const fetchUser = async () => {
+      try {
+        const userData = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/users/getCurrentUser`, {
+          withCredentials: true,
+        });
+
         console.log(userData);
+
         if (userData.data.data) {
           dispatch(login(userData.data.data));
-        }
-        else {
+        } else {
           dispatch(logout());
           navigate("/login");
         }
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error(error);
         navigate("/login");
-      })
-      .finally(() => setLoading(false));
-  }, [dispatch, status])
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [dispatch, status]);
+
 
   if (loading) {
     return <Loading />
