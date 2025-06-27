@@ -146,7 +146,7 @@ const CodeEditor = () => {
             wsRef.current.close();
         }
 
-        wsRef.current = new WebSocket('ws://localhost:8080');
+        wsRef.current = new WebSocket(import.meta.env.VITE_EXECUTION_WS_URL);
 
         wsRef.current.onopen = () => {
             setIsConnected(true);
@@ -215,7 +215,7 @@ const CodeEditor = () => {
         ydocRef.current = ydoc;
 
         const provider = new HocuspocusProvider({
-            url: 'ws://localhost:1234',
+            url: import.meta.env.VITE_YJS_WS_URL,
             name: documentName,
             document: ydoc,
         });
@@ -409,7 +409,7 @@ const CodeEditor = () => {
 
         const ydoc = new Y.Doc();
         const provider = new HocuspocusProvider({
-            url: 'ws://localhost:1234',
+            url: import.meta.env.VITE_YJS_WS_URL,
             name: `${roomId}-default`,
             document: ydoc,
         });
