@@ -14,8 +14,9 @@ import { keymap } from '@codemirror/view';
 import { indentWithTab } from '@codemirror/commands';
 import FileExplorer from './FileSidebar.jsx';
 import Chat from './ChatComponenet.jsx';
-import { connectExecutionWebSocket, createHocuspocusProvider } from '../utils/socket.js';
 import { useSelector } from 'react-redux';
+import { connectExecutionWebSocket, createHocuspocusProvider, connectHocuspocus } from '../utils/socket.js';
+
 const api = axios.create({
     baseURL: import.meta.env.VITE_BACKEND_URL + '/api',
     withCredentials: true,

@@ -1,7 +1,9 @@
+// utils/socket.js
+import { HocuspocusProvider } from '@hocuspocus/provider';
+
 const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
 const host = window.location.host;
 
-// ✅ Execution WebSocket Connector
 export function connectExecutionWebSocket(onMessage, onOpen, onClose, onError) {
     const url = `${wsProtocol}://${host}/execution`;
     const ws = new WebSocket(url);
@@ -12,12 +14,17 @@ export function connectExecutionWebSocket(onMessage, onOpen, onClose, onError) {
     return ws;
 }
 
-// ✅ Hocuspocus WebSocket Connector (Yjs)
 export function createHocuspocusProvider(documentName, ydoc) {
-    const url = `${wsProtocol}://${host}/yjs`;
     return new HocuspocusProvider({
-        url,
+        url: `${wsProtocol}://${host}/yjs`,
         name: documentName,
         document: ydoc,
     });
+}
+
+// ✅ Export this wrapper to match your usage
+export function connectHocuspocus(documentName) {
+    const ydoc = new Y.Doc(); // Make sure to import Y in this file
+    const provider = createHocuspocusProvider(documentName, ydoc);
+    return { ydoc, provider };
 }
