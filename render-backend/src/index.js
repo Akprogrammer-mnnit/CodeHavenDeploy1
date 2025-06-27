@@ -8,11 +8,12 @@ dotenv.config({ path: './.env' })
 
 connectDB()
   .then(() => {
-    const PORT = process.env.PORT || 3000
+    const PORT = process.env.PORT || 3000;
 
-    server.listen(PORT, () => {
-      console.log(`🚀 Express server running on port ${PORT}`)
-    })
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+
 
     yjsServer.listen().then(() => {
       console.log('✅ Yjs WebSocket server running on ws://localhost:1234')

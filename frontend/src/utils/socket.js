@@ -23,6 +23,7 @@ function getWebSocketUrl(url) {
 }
 
 // 🔌 Execution WebSocket connector
+// 🔌 Execution WebSocket connector with retry logic
 export function connectExecutionWebSocket(onMessage, onOpen, onClose, onError) {
     const wsUrl = getWebSocketUrl(backendWsUrl);
     const url = `${wsUrl}/execution`;
@@ -30,31 +31,48 @@ export function connectExecutionWebSocket(onMessage, onOpen, onClose, onError) {
     console.log('Connecting to execution WebSocket:', url);
 
     const ws = new WebSocket(url);
-    ws.onopen = onOpen;
+
+    ws.onopen = (event) => {
+        console.log('Execution WebSocket connected');
+        onOpen(event);
+    };
+
     ws.onmessage = onMessage;
-    ws.onerror = onError;
-    ws.onclose = onClose;
+
+    ws.onerror = (error) => {
+        console.error('Execution WebSocket error:', error);
+        onError(error);
+    };
+
+    ws.onclose = (event) => {
+        console.log('Execution WebSocket closed:', event.code, event.reason);
+        onClose(event);
+    };
 
     return ws;
 }
 
-// 🔌 Hocuspocus/Yjs WebSocket provider
+// 🔌 Hocuspocus/Yjs WebSocket provider with better error handling
 export function createHocuspocusProvider(documentName, ydoc) {
     const wsUrl = getWebSocketUrl(backendWsUrl);
     const url = `${wsUrl}/yjs`;
 
     console.log('Connecting to Hocuspocus WebSocket:', url);
 
-    return new HocuspocusProvider({
+    const provider = new HocuspocusProvider({
         url,
         name: documentName,
         document: ydoc,
+        onConnect: () => {
+            console.log('Hocuspocus connected');
+        },
+        onDisconnect: () => {
+            console.log('Hocuspocus disconnected');
+        },
+        onStatus: ({ status }) => {
+            console.log('Hocuspocus status:', status);
+        },
     });
-}
 
-// 🔌 Optional helper for creating both ydoc and provider
-export function connectHocuspocus(documentName) {
-    const ydoc = new Y.Doc();
-    const provider = createHocuspocusProvider(documentName, ydoc);
-    return { ydoc, provider };
+    return provider;
 }
