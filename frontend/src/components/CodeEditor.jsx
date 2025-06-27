@@ -14,6 +14,7 @@ import { keymap } from '@codemirror/view';
 import { indentWithTab } from '@codemirror/commands';
 import FileExplorer from './FileSidebar.jsx';
 import Chat from './ChatComponenet.jsx';
+import { connectExecutionWebSocket, createHocuspocusProvider } from '../utils/socket.js';
 import { useSelector } from 'react-redux';
 const api = axios.create({
     baseURL: import.meta.env.VITE_BACKEND_URL,
@@ -140,90 +141,6 @@ const CodeEditor = () => {
         }
     };
 
-
-    const connectExecutionWebSocket = () => {
-        if (wsRef.current) {
-            wsRef.current.close();
-        }
-
-        wsRef.current = new WebSocket(`${import.meta.env.VITE_BACKEND_URL}/execution`);
-        wsRef.current.onopen = () => {
-            setIsConnected(true);
-            addToTerminal('Connected to execution service', 'system');
-        };
-
-        wsRef.current.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-
-                switch (data.type) {
-                    case 'system':
-                        addToTerminal(data.data, 'system');
-                        break;
-                    case 'output':
-                        if (data.data && data.data.trim()) {
-                            addToTerminal(data.data.trim(), 'output');
-                        }
-                        break;
-                    case 'end':
-                        addToTerminal(data.data, 'success');
-                        setIsExecuting(false);
-                        break;
-                    case 'error':
-                        if (data.data && data.data.trim()) {
-                            addToTerminal(data.data.trim(), 'error');
-                        }
-                        setIsExecuting(false);
-                        break;
-                    default:
-                        addToTerminal(`Unknown message: ${data.data}`, 'error');
-                }
-            } catch (err) {
-                addToTerminal(`Parse error: ${event.data}`, 'error');
-            }
-        };
-
-        wsRef.current.onerror = () => {
-            addToTerminal('WebSocket connection error occurred', 'error');
-            setIsConnected(false);
-            setIsExecuting(false);
-        };
-
-        wsRef.current.onclose = () => {
-            if (!isExplicitClose.current) {
-                addToTerminal('Connection lost. Attempting to reconnect...', 'error');
-                setTimeout(connectExecutionWebSocket, 3000);
-            }
-            setIsConnected(false);
-            setIsExecuting(false);
-        };
-    };
-
-    const connectHocuspocus = (documentName) => {
-        if (providerRef.current) {
-            providerRef.current.destroy();
-            providerRef.current = null;
-        }
-
-        if (ydocRef.current) {
-            ydocRef.current.destroy();
-            ydocRef.current = null;
-        }
-
-        const ydoc = new Y.Doc();
-        ydocRef.current = ydoc;
-
-        const provider = new HocuspocusProvider({
-            url: `${import.meta.env.VITE_BACKEND_URL}/yjs`,
-            name: documentName,
-            document: ydoc,
-        });
-
-        providerRef.current = provider;
-        awarenessRef.current = provider.awareness;
-
-        return { ydoc, provider };
-    };
 
     const createEditor = (ydoc, provider) => {
         if (editorViewRef.current) {
@@ -403,15 +320,68 @@ const CodeEditor = () => {
         }
     }, [terminalContent]);
 
+    const handleMessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            switch (data.type) {
+                case 'system':
+                    addToTerminal(data.data, 'system');
+                    break;
+                case 'output':
+                    if (data.data && data.data.trim()) {
+                        addToTerminal(data.data.trim(), 'output');
+                    }
+                    break;
+                case 'end':
+                    addToTerminal(data.data, 'success');
+                    setIsExecuting(false);
+                    break;
+                case 'error':
+                    if (data.data && data.data.trim()) {
+                        addToTerminal(data.data.trim(), 'error');
+                    }
+                    setIsExecuting(false);
+                    break;
+                default:
+                    addToTerminal(`Unknown message: ${data.data}`, 'error');
+            }
+        } catch (err) {
+            addToTerminal(`Parse error: ${event.data}`, 'error');
+        }
+    };
+
+    const handleOpen = () => {
+        setIsConnected(true);
+        addToTerminal('Connected to execution service', 'system');
+    };
+
+    const handleError = () => {
+        addToTerminal('WebSocket connection error occurred', 'error');
+        setIsConnected(false);
+        setIsExecuting(false);
+    };
+
+    const handleClose = () => {
+        if (!isExplicitClose.current) {
+            addToTerminal('Connection lost. Attempting to reconnect...', 'error');
+            setTimeout(() => {
+                wsRef.current = connectExecutionWebSocket(handleMessage, handleOpen, handleClose, handleError);
+            }, 3000);
+        }
+        setIsConnected(false);
+        setIsExecuting(false);
+    };
+
     useEffect(() => {
-        connectExecutionWebSocket();
+        wsRef.current = connectExecutionWebSocket(
+            handleMessage,
+            handleOpen,
+            handleClose,
+            handleError
+        );
 
         const ydoc = new Y.Doc();
-        const provider = new HocuspocusProvider({
-            url: `${import.meta.env.VITE_BACKEND_URL}/yjs`,
-            name: `${roomId}-default`,
-            document: ydoc,
-        });
+        const provider = createHocuspocusProvider(`${roomId}-default`, ydoc);
 
         ydocRef.current = ydoc;
         providerRef.current = provider;
@@ -446,6 +416,7 @@ const CodeEditor = () => {
             }
         };
     }, [roomId]);
+
 
     useEffect(() => {
         if (!editorViewRef.current || !ytextRef.current || !awarenessRef.current) return;
