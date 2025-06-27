@@ -353,18 +353,18 @@ const CodeEditor = () => {
 
     const handleOpen = () => {
         setIsConnected(true);
-        addToTerminal('Connected to execution service', 'system');
+        addToTerminal('✅ Connected to execution service', 'system');
     };
 
     const handleError = () => {
-        addToTerminal('WebSocket connection error occurred', 'error');
+        addToTerminal('❌ WebSocket connection error occurred', 'error');
         setIsConnected(false);
         setIsExecuting(false);
     };
 
     const handleClose = () => {
         if (!isExplicitClose.current) {
-            addToTerminal('Connection lost. Attempting to reconnect...', 'error');
+            addToTerminal('🔌 Connection lost. Attempting to reconnect...', 'error');
             setTimeout(() => {
                 wsRef.current = connectExecutionWebSocket(handleMessage, handleOpen, handleClose, handleError);
             }, 3000);
@@ -373,6 +373,7 @@ const CodeEditor = () => {
         setIsExecuting(false);
     };
 
+    // ✅ useEffect to set up everything
     useEffect(() => {
         wsRef.current = connectExecutionWebSocket(
             handleMessage,
@@ -388,7 +389,7 @@ const CodeEditor = () => {
         providerRef.current = provider;
         awarenessRef.current = provider.awareness;
 
-        createEditor(ydoc, provider);
+        editorViewRef.current = createEditor(ydoc, provider);
 
         return () => {
             if (saveTimeoutRef.current) {
@@ -397,17 +398,9 @@ const CodeEditor = () => {
 
             isExplicitClose.current = true;
 
-            if (editorViewRef.current) {
-                editorViewRef.current.destroy();
-            }
-
-            if (providerRef.current) {
-                providerRef.current.destroy();
-            }
-
-            if (ydocRef.current) {
-                ydocRef.current.destroy();
-            }
+            if (editorViewRef.current) editorViewRef.current.destroy();
+            if (providerRef.current) providerRef.current.destroy();
+            if (ydocRef.current) ydocRef.current.destroy();
 
             if (wsRef.current && (
                 wsRef.current.readyState === WebSocket.CONNECTING ||
@@ -417,7 +410,6 @@ const CodeEditor = () => {
             }
         };
     }, [roomId]);
-
 
     useEffect(() => {
         if (!editorViewRef.current || !ytextRef.current || !awarenessRef.current) return;
