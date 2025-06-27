@@ -1,11 +1,24 @@
-// utils/socket.js
 import { HocuspocusProvider } from '@hocuspocus/provider';
+import * as Y from 'yjs';
 
-const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-const host = window.location.host;
+// ✅ Safely get backend host from .env
+const backendHost = import.meta.env.VITE_BACKEND_WS || window.location.host;
 
+// ✅ Choose correct protocol
+const wsProtocol = backendHost.startsWith('https')
+    ? 'wss'
+    : backendHost.startsWith('http')
+        ? 'ws'
+        : window.location.protocol === 'https:' ? 'wss' : 'ws';
+
+// ✅ Construct full WebSocket URL
+const baseWsUrl = backendHost.startsWith('http')
+    ? backendHost.replace(/^https?/, wsProtocol)
+    : `${wsProtocol}://${backendHost}`;
+
+// 🔌 Execution WebSocket connector
 export function connectExecutionWebSocket(onMessage, onOpen, onClose, onError) {
-    const url = `${wsProtocol}://${host}/execution`;
+    const url = `${baseWsUrl}/execution`;
     const ws = new WebSocket(url);
     ws.onopen = onOpen;
     ws.onmessage = onMessage;
@@ -14,17 +27,19 @@ export function connectExecutionWebSocket(onMessage, onOpen, onClose, onError) {
     return ws;
 }
 
+// 🔌 Hocuspocus/Yjs WebSocket provider
 export function createHocuspocusProvider(documentName, ydoc) {
+    const url = `${baseWsUrl}/yjs`;
     return new HocuspocusProvider({
-        url: `${wsProtocol}://${host}/yjs`,
+        url,
         name: documentName,
         document: ydoc,
     });
 }
 
-// ✅ Export this wrapper to match your usage
+// Optional helper if you want to use this pattern
 export function connectHocuspocus(documentName) {
-    const ydoc = new Y.Doc(); // Make sure to import Y in this file
+    const ydoc = new Y.Doc();
     const provider = createHocuspocusProvider(documentName, ydoc);
     return { ydoc, provider };
 }
