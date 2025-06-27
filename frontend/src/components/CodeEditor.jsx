@@ -146,8 +146,7 @@ const CodeEditor = () => {
             wsRef.current.close();
         }
 
-        wsRef.current = new WebSocket(import.meta.env.VITE_EXECUTION_WS_URL);
-
+        wsRef.current = new WebSocket(`${import.meta.env.VITE_BACKEND_URL}/execution`);
         wsRef.current.onopen = () => {
             setIsConnected(true);
             addToTerminal('Connected to execution service', 'system');
@@ -215,7 +214,7 @@ const CodeEditor = () => {
         ydocRef.current = ydoc;
 
         const provider = new HocuspocusProvider({
-            url: import.meta.env.VITE_YJS_WS_URL,
+            url: `${import.meta.env.VITE_BACKEND_URL}/yjs`,
             name: documentName,
             document: ydoc,
         });
@@ -409,7 +408,7 @@ const CodeEditor = () => {
 
         const ydoc = new Y.Doc();
         const provider = new HocuspocusProvider({
-            url: import.meta.env.VITE_YJS_WS_URL,
+            url: `${import.meta.env.VITE_BACKEND_URL}/yjs`,
             name: `${roomId}-default`,
             document: ydoc,
         });

@@ -1,11 +1,11 @@
-import express from 'express'
-import http from 'http'
-import cors from 'cors'
-import { Server as SocketServer } from 'socket.io'
+import express from 'express';
+import http from 'http';
+import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import dotenv from 'dotenv';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
-import dotenv from 'dotenv'
-dotenv.config({ path: './.env' })
+dotenv.config({ path: './.env' });
 
 const app = express();
 
@@ -14,14 +14,29 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json({ limit: "16kb" }));
-
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
-
 app.use(express.static("public"));
-
 app.use(cookieParser());
 
-const server = http.createServer(app)
+app.use(
+  '/yjs',
+  createProxyMiddleware({
+    target: 'http://localhost:1234',
+    changeOrigin: true,
+    ws: true,
+    pathRewrite: { '^/yjs': '' },
+  })
+);
+
+app.use(
+  '/execution',
+  createProxyMiddleware({
+    target: 'http://localhost:8080',
+    changeOrigin: true,
+    ws: true,
+    pathRewrite: { '^/execution': '' },
+  })
+);
 
 import roomRoutes from './routes/roomRoutes.js';
 import fileRoutes from './routes/fileRoutes.js';
@@ -33,15 +48,16 @@ app.use('/api/files', fileRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
 
+const server = http.createServer(app);
+import { Server as SocketServer } from 'socket.io';
 const io = new SocketServer(server, {
   cors: {
     origin: process.env.CORS_ORIGIN || '*',
     methods: ['GET', 'POST'],
     credentials: true
   }
-})
-
+});
 import { handleChatSocket } from './socket/socket.js';
 handleChatSocket(io);
 
-export { server, io }
+export { server, io };
