@@ -5,8 +5,7 @@ import { Link } from 'react-router-dom';
 import { X } from 'lucide-react';
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_BACKEND_URL,
-    headers: { 'Content-Type': 'application/json' },
+    baseURL: import.meta.env.VITE_BACKEND_URL + '/api',
     withCredentials: true,
 });
 

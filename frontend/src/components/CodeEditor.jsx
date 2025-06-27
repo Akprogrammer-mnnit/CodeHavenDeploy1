@@ -17,10 +17,10 @@ import Chat from './ChatComponenet.jsx';
 import { connectExecutionWebSocket, createHocuspocusProvider } from '../utils/socket.js';
 import { useSelector } from 'react-redux';
 const api = axios.create({
-    baseURL: import.meta.env.VITE_BACKEND_URL,
-    headers: { 'Content-Type': 'application/json' },
+    baseURL: import.meta.env.VITE_BACKEND_URL + '/api',
     withCredentials: true,
 });
+
 const languageExtensions = {
     javascript: javascript(),
     python: python(),

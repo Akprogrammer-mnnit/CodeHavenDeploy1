@@ -14,7 +14,7 @@ function App() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const userData = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/users/getCurrentUser`, {
+        const userData = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/users/getCurrentUser`, {
           withCredentials: true,
         });
 

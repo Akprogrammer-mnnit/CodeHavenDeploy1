@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import CodeEditor from './CodeEditor.jsx'; // Import your existing CodeEditor component
+import CodeEditor from './CodeEditor.jsx';
 import { useNavigate } from "react-router-dom";
 import { useSelector } from 'react-redux';
-// Configure axios base URL for your backend
 const api = axios.create({
-    baseURL: import.meta.env.VITE_BACKEND_URL,
-    headers: { 'Content-Type': 'application/json' },
+    baseURL: import.meta.env.VITE_BACKEND_URL + '/api',
     withCredentials: true,
 });
+
 
 
 const Room = () => {
@@ -44,11 +43,11 @@ const Room = () => {
             }
         } catch (err) {
             if (err.response) {
-                // Server responded with error status
+
                 const data = err.response.data;
                 setError(data.message || 'Failed to create room');
             } else if (err.request) {
-                // Network error
+
                 setError('Network error. Please try again.');
             } else {
                 setError('An unexpected error occurred.');
