@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import * as Y from 'yjs';
 import { HocuspocusProvider } from '@hocuspocus/provider';
@@ -35,7 +34,7 @@ const CodeEditor = () => {
 
     const editorRef = useRef(null);
     const terminalRef = useRef(null);
-    const editorViewRef = useRef(null);
+    const editorViewRef = useRef(null); // This will store the EditorView instance
     const providerRef = useRef(null);
     const awarenessRef = useRef(null);
     const ydocRef = useRef(null);
@@ -57,6 +56,7 @@ const CodeEditor = () => {
     const [lastSaved, setLastSaved] = useState(null);
     const [fileExplorerKey, setFileExplorerKey] = useState(0);
     const userInfo = useSelector((state) => state.auth.userData);
+
     const addToTerminal = (message, type = 'info') => {
         const timestamp = new Date().toLocaleTimeString();
         setTerminalContent(prev => [...prev, { message, type, timestamp }]);
@@ -142,8 +142,8 @@ const CodeEditor = () => {
         }
     };
 
-
     const createEditor = (ydoc, provider) => {
+        // Clean up existing editor
         if (editorViewRef.current) {
             editorViewRef.current.destroy();
             editorViewRef.current = null;
@@ -151,7 +151,6 @@ const CodeEditor = () => {
 
         const ytext = ydoc.getText('codemirror');
         ytextRef.current = ytext;
-
 
         const state = EditorState.create({
             doc: ytext.toString(),
@@ -181,6 +180,7 @@ const CodeEditor = () => {
             parent: editorRef.current
         });
 
+        // Store the EditorView instance directly
         editorViewRef.current = view;
         return { ytext, view };
     };
@@ -193,10 +193,8 @@ const CodeEditor = () => {
         try {
             console.log("Selected file: ", file);
 
-
             const response = await api.get(`/files/${roomId}/${encodeURIComponent(file.path)}`);
             const content = response.data.content || '';
-
 
             const documentName = `${roomId}::${file.path}`;
             const { ydoc, provider } = connectHocuspocus(documentName);
@@ -314,7 +312,6 @@ const CodeEditor = () => {
         }
     };
 
-
     useEffect(() => {
         if (terminalRef.current) {
             terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
@@ -389,7 +386,8 @@ const CodeEditor = () => {
         providerRef.current = provider;
         awarenessRef.current = provider.awareness;
 
-        editorViewRef.current = createEditor(ydoc, provider);
+        // Create initial editor - this returns { ytext, view }
+        createEditor(ydoc, provider);
 
         return () => {
             if (saveTimeoutRef.current) {
@@ -398,9 +396,18 @@ const CodeEditor = () => {
 
             isExplicitClose.current = true;
 
-            if (editorViewRef.current) editorViewRef.current.destroy();
-            if (providerRef.current) providerRef.current.destroy();
-            if (ydocRef.current) ydocRef.current.destroy();
+            // ✅ Fixed: Check if editorViewRef.current exists and has destroy method
+            if (editorViewRef.current && typeof editorViewRef.current.destroy === 'function') {
+                editorViewRef.current.destroy();
+            }
+
+            if (providerRef.current && typeof providerRef.current.destroy === 'function') {
+                providerRef.current.destroy();
+            }
+
+            if (ydocRef.current && typeof ydocRef.current.destroy === 'function') {
+                ydocRef.current.destroy();
+            }
 
             if (wsRef.current && (
                 wsRef.current.readyState === WebSocket.CONNECTING ||
@@ -542,8 +549,6 @@ const CodeEditor = () => {
                                         <span>{isSaving ? 'Saving...' : 'Save'}</span>
                                     </div>
                                 </button>
-
-
 
                                 <button
                                     onClick={clearTerminal}
